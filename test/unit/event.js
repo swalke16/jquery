@@ -270,14 +270,19 @@ test("bind(), namespaced events, cloned events", function() {
 });
 
 test("bind(), multi-namespaced events", function() {
-	expect(6);
+	expect(11);
 	
 	var order = [
+        "click.test",
+		"click.test.abc",
+        "click.test",
 		"click.test.abc",
 		"click.test.abc",
 		"click.test",
 		"click.test.abc",
 		"click.test",
+		"click.test.abc",
+        "click.test.abc",
 		"custom.test2"
 	];
 	
@@ -302,10 +307,10 @@ test("bind(), multi-namespaced events", function() {
 	});
 	
 	// Those would not trigger/unbind (#5303)
+    //Trigger one bound fn (1)
 	jQuery("#firstp").trigger("click.a.test");
-	jQuery("#firstp").unbind("click.a.test");
 
-	// Trigger both bound fn (1)
+	// Trigger both bound fn (2)
 	jQuery("#firstp").trigger("click.test.abc");
 
 	// Trigger one bound fn (1)
@@ -314,14 +319,22 @@ test("bind(), multi-namespaced events", function() {
 	// Trigger two bound fn (2)
 	jQuery("#firstp").trigger("click.test");
 
-	// Remove only the one fn
-	jQuery("#firstp").unbind("click.abc");
-
-	// Trigger the remaining fn (1)
+    // Trigger two bound fn (2)
 	jQuery("#firstp").trigger("click");
 
-	// Remove the remaining fn
+	// Remove only the one fn
+	// Those would not trigger/unbind (#5303)
+	jQuery("#firstp").unbind("click.a.test");
+
+    // Trigger one bound fn (1)
+	jQuery("#firstp").trigger("click");
+
+	// Remove the remaining fns
 	jQuery("#firstp").unbind(".test");
+    jQuery("#firstp").unbind(".abc");
+
+    // should trigger no bound functions
+	jQuery("#firstp").trigger("click");
 
 	// Trigger the remaining fn (1)
 	jQuery("#firstp").trigger("custom");
@@ -465,6 +478,13 @@ test("unbind(type)", function() {
 	$elem.bind("error1 error2.test",error)
 		 .unbind()
 		 .trigger("error1").triggerHandler("error2");
+
+    message = "unbind multi-namespaced event";
+    $elem.bind("error1.ns1.ns2", error)
+        .unbind("error1.ns1.ns2")
+        .trigger("error1.ns1")
+        .triggerHandler("error1.ns2")
+
 });
 
 test("unbind(eventObject)", function() {
