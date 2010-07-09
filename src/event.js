@@ -617,6 +617,10 @@ var EventType = function(type)
             {
                 return this.matchingNamespaces(namespaces).length > 0;
             },
+            allNamespacesMatch: function(namespaces)
+            {
+                return this.namespaceString === namespaces.sort().join(".");
+            },
             matchingNamespaces: function(namespaces){
                 return jQuery.grep(this.namespaces, function(elem, index){
                    return jQuery.inArray(elem, namespaces) >= 0;
@@ -1015,18 +1019,16 @@ function liveHandler( event ) {
 		return;
 	}
 
-
 	event.liveFired = this;
-    typeObj = EventType(event.type + event.namespace ? "." + event.namespace : "");
+    typeObj = EventType(event.type + (event.namespace ? "." + event.namespace : ""));
 
 	var live = events.live.slice(0);
 
 	for ( j = 0; j < live.length; j++ ) {
 		handleObj = live[j];
 
-		if ( handleObj.type === event.type && typeObj.namespaceMatches(handleObj.namespaces) ) {
+		if ( handleObj.origType === event.type && typeObj.allNamespacesMatch(handleObj.namespaces) ) {
 			selectors.push( handleObj.selector );
-
 		} else {
 			live.splice( j--, 1 );
 		}
@@ -1040,7 +1042,7 @@ function liveHandler( event ) {
 		for ( j = 0; j < live.length; j++ ) {
 			handleObj = live[j];
 
-			if ( close.selector === handleObj.selector && typeObj.namespaceMatches(handleObj.namespaces) ) {
+			if ( close.selector === handleObj.selector && typeObj.allNamespacesMatch(handleObj.namespaces) ) {
 				elem = close.elem;
 				related = null;
 
