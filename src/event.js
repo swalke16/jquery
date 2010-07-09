@@ -115,7 +115,8 @@ jQuery.event = {
 			// Add the function to the element's handler list
 			handlers.push( handleObj );
 
-		}
+            jQuery.event.global[ type ] = true;
+        }
 
 		// Nullify elem to prevent memory leaks in IE
 		elem = null;
@@ -979,8 +980,6 @@ jQuery.each(["live", "die"], function( i, name ) {
 				types.push( "mouseenter" + typeObj.namespaceString, "mouseleave" + typeObj.namespaceString );
 				continue;
 			}
-
-
             else if (type === "focus" || type === "blur")
             {
                 types.push( liveMap[ type ] + typeObj.namespaceString );
