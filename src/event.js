@@ -992,7 +992,7 @@ jQuery.each(["live", "die"], function( i, name ) {
 				// bind live handler
 				for ( var j = 0, l = context.length; j < l; j++ ) {
 					jQuery.event.add( context[j], "live." + liveConvert( type, selector ),
-						{ data: data, selector: selector, handler: fn, origHandler: fn, preType: preType } );
+						{ data: data, selector: selector, handler: fn, origType: type, origHandler: fn, preType: preType } );
 				}
 
 			} else {
