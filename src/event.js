@@ -72,7 +72,7 @@ jQuery.event = {
 				{ handler: handler, data: data };
 
 			// Namespaced event handlers
-            typeObj = splitTypeAndNamespace(type);
+            typeObj = EventType(type);
             type = typeObj.type;
             handleObj.namespaces = typeObj.namespaces;
 
@@ -169,7 +169,7 @@ jQuery.event = {
 			handleObj = null;
 			all = type.indexOf(".") < 0;
 
-            typeObj = splitTypeAndNamespace(type);
+            typeObj = EventType(type);
             type = typeObj.type;
 
 			eventType = events[ type ];
@@ -369,7 +369,7 @@ jQuery.event = {
 		// Namespaced event handlers
 		all = event.type.indexOf(".") < 0 && !event.exclusive;
 
-        typeObj = splitTypeAndNamespace(event.type);
+        typeObj = EventType(event.type);
         event.type = typeObj.type;
 
 		event.namespaces = event.namespaces || typeObj.namespaces;
@@ -596,7 +596,7 @@ jQuery.Event.prototype = {
 };
 
 // splits a namespace from a type and returns the typeName, namespace array, and regex to test against namespaces
-var splitTypeAndNamespace = function(type)
+var EventType = function(type)
 {
     var namespaces;
 
@@ -972,7 +972,7 @@ jQuery.each(["live", "die"], function( i, name ) {
 
 		while ( (type = types[ i++ ]) != null ) {
 
-			typeObj = splitTypeAndNamespace(type);
+			typeObj = EventType(type);
             type = typeObj.type;
 
 			if ( type === "hover" ) {
@@ -1018,7 +1018,7 @@ function liveHandler( event ) {
 
 
 	event.liveFired = this;
-    typeObj = splitTypeAndNamespace(event.type + event.namespace ? "." + event.namespace : "");
+    typeObj = EventType(event.type + event.namespace ? "." + event.namespace : "");
 
 	var live = events.live.slice(0);
 
