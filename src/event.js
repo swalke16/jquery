@@ -996,14 +996,19 @@ jQuery.each(["live", "die"], function( i, name ) {
 				types.push( "mouseenter" + typeObj.namespaceString, "mouseleave" + typeObj.namespaceString );
 				continue;
 			}
-            else if (type === "focus" || type === "blur")
-            {
-                types.push( liveMap[ type ] + typeObj.namespaceString );
-                continue;
-			}
 
-			preType = type;
-			type = (liveMap[ type ] || type) + typeObj.namespaceString;
+            preType = type;
+
+            if (type === "focus" || type === "blur")
+            {
+                types.push( liveMap[ type ] + typeObj.namespaceString);
+                type += typeObj.namespaceString;
+			}
+            else
+            {
+                type = (liveMap[ type ] || type) + typeObj.namespaceString;
+            }
+
 			if ( name === "live" ) {
 				// bind live handler
 				for ( var j = 0, l = context.length; j < l; j++ ) {
