@@ -189,10 +189,18 @@ jQuery.event = {
                         handlersToRemove.push(handleObj.handler);
 					}
                     else {
-                        if(typeObj.hasMatchingNamespaces(handleObj.namespaces)) {
-                            handleObj.namespaces = typeObj.nonMatchingNamespaces(handleObj.namespaces);
-                            if (handleObj.namespaces.length === 0){
+                        // if this was a live handler and it does not match all the namespaces then do not remove it
+                        if (handleObj.type === "live") {
+                            if (typeObj.allNamespacesMatch(handleObj.namespaces)) {
                                 handlersToRemove.push(handleObj.handler);
+                            }
+                        }
+                        else {
+                            if(typeObj.hasMatchingNamespaces(handleObj.namespaces)) {
+                                handleObj.namespaces = typeObj.nonMatchingNamespaces(handleObj.namespaces);
+                                if (handleObj.namespaces.length === 0){
+                                    handlersToRemove.push(handleObj.handler);
+                                }
                             }
                         }
                     }
@@ -213,8 +221,12 @@ jQuery.event = {
                 {
                     handleObj = eventType[ k ];
 
-                    if ( handlerToRemove.guid === handleObj.guid )
+                    if ( handlerToRemove.guid === handleObj.guid)
                     {
+                        // if this was a live handler and it does not match all the namespaces then do not remove it
+                        if (handleObj.type === "live" && !typeObj.allNamespacesMatch(handleObj.namespaces))
+                            continue;
+
                         eventType.splice( k--, 1 );
 
 						if ( special.remove ) {
