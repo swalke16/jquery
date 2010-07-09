@@ -1027,7 +1027,7 @@ function liveHandler( event ) {
 	for ( j = 0; j < live.length; j++ ) {
 		handleObj = live[j];
 
-		if ( handleObj.origType === event.type && typeObj.allNamespacesMatch(handleObj.namespaces) ) {
+		if ( handleObj.origType === event.type ) {
 			selectors.push( handleObj.selector );
 		} else {
 			live.splice( j--, 1 );
@@ -1042,7 +1042,7 @@ function liveHandler( event ) {
 		for ( j = 0; j < live.length; j++ ) {
 			handleObj = live[j];
 
-			if ( close.selector === handleObj.selector && typeObj.allNamespacesMatch(handleObj.namespaces) ) {
+			if ( close.selector === handleObj.selector && (!typeObj.hasNamespaces() || typeObj.allNamespacesMatch(handleObj.namespaces)) ) {
 				elem = close.elem;
 				related = null;
 
