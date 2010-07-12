@@ -71,23 +71,17 @@ jQuery.event = {
 		// jQuery(...).bind("mouseover mouseout", fn);
 		types = types.split(" ");
 
-		var type, i = 0, namespaces;
+		var type, i = 0, typeObj;
 
 		while ( (type = types[ i++ ]) ) {
 			handleObj = handleObjIn ?
 				jQuery.extend({}, handleObjIn) :
 				{ handler: handler, data: data };
 
-			// Namespaced event handlers
-			if ( type.indexOf(".") > -1 ) {
-				namespaces = type.split(".");
-				type = namespaces.shift();
-				handleObj.namespace = namespaces.slice(0).sort().join(".");
-
-			} else {
-				namespaces = [];
-				handleObj.namespace = "";
-			}
+		        // Namespaced event handlers
+                        typeObj = EventType(type);
+                        type = typeObj.type;
+                        handleObj.namespace = typeObj.namespace;
 
 			handleObj.type = type;
 			if ( !handleObj.guid ) {
@@ -105,7 +99,7 @@ jQuery.event = {
 				// Check for a special event handler
 				// Only use addEventListener/attachEvent if the special
 				// events handler returns false
-				if ( !special.setup || special.setup.call( elem, data, namespaces, eventHandle ) === false ) {
+				if ( !special.setup || special.setup.call( elem, data, typeObj.namespace, eventHandle ) === false ) {
 					// Bind the global event handler to the element
 					if ( elem.addEventListener ) {
 						elem.addEventListener( type, eventHandle, false );
@@ -148,7 +142,8 @@ jQuery.event = {
 			handler = returnFalse;
 		}
 
-		var ret, type, fn, j, i = 0, all, namespaces, namespace, special, eventType, handleObj, origType,
+		var ret, type, fn, j, i = 0, k=0, all, typeObj, special, eventType, handleObj, origType,
+                        handlersToRemove, handlerToRemove,
 			elemData = jQuery.data( elem ),
 			events = elemData && elemData.events;
 
@@ -181,16 +176,9 @@ jQuery.event = {
 			origType = type;
 			handleObj = null;
 			all = type.indexOf(".") < 0;
-			namespaces = [];
 
-			if ( !all ) {
-				// Namespaced event handlers
-				namespaces = type.split(".");
-				type = namespaces.shift();
-
-				namespace = new RegExp("(^|\\.)" + 
-					jQuery.map( namespaces.slice(0).sort(), fcleanup ).join("\\.(?:.*\\.)?") + "(\\.|$)");
-			}
+                        typeObj = EventType(type);
+                        type = typeObj.type;
 
 			eventType = events[ type ];
 
@@ -202,7 +190,7 @@ jQuery.event = {
 				for ( j = 0; j < eventType.length; j++ ) {
 					handleObj = eventType[ j ];
 
-					if ( all || namespace.test( handleObj.namespace ) ) {
+					if ( all || typeObj.namespaceMatches(handleObj.namespace ) ) {
 						jQuery.event.remove( elem, origType, handleObj.handler, j );
 						eventType.splice( j--, 1 );
 					}
@@ -218,7 +206,7 @@ jQuery.event = {
 
 				if ( handler.guid === handleObj.guid ) {
 					// remove the given handler for the given type
-					if ( all || namespace.test( handleObj.namespace ) ) {
+					if ( all || typeObj.namespaceMatches(handleObj.namespace ) ) {
 						if ( pos == null ) {
 							eventType.splice( j--, 1 );
 						}
@@ -236,7 +224,7 @@ jQuery.event = {
 
 			// remove generic event handler if no more handlers exist
 			if ( eventType.length === 0 || pos != null && eventType.length === 1 ) {
-				if ( !special.teardown || special.teardown.call( elem, namespaces ) === false ) {
+				if ( !special.teardown || special.teardown.call( elem, typeObj.namespace ) === false ) {
 					removeEvent( elem, type, elemData.handle );
 				}
 
@@ -370,7 +358,7 @@ jQuery.event = {
 	},
 
 	handle: function( event ) {
-		var all, handlers, namespaces, namespace_sort = [], namespace_re, events, args = jQuery.makeArray( arguments );
+		var all, handlers, typeObj, events, args = jQuery.makeArray( arguments );
 
 		event = args[0] = jQuery.event.fix( event || window.event );
 		event.currentTarget = this;
@@ -378,14 +366,10 @@ jQuery.event = {
 		// Namespaced event handlers
 		all = event.type.indexOf(".") < 0 && !event.exclusive;
 
-		if ( !all ) {
-			namespaces = event.type.split(".");
-			event.type = namespaces.shift();
-			namespace_sort = namespaces.slice(0).sort();
-			namespace_re = new RegExp("(^|\\.)" + namespace_sort.join("\\.(?:.*\\.)?") + "(\\.|$)");
-		}
+                typeObj = EventType(event.type);
+                event.type = typeObj.type;
 
-		event.namespace = event.namespace || namespace_sort.join(".");
+		event.namespace = event.namespace || typeObj.namespace;
 
 		events = jQuery.data(this, "events");
 		handlers = (events || {})[ event.type ];
@@ -398,7 +382,7 @@ jQuery.event = {
 				var handleObj = handlers[ j ];
 
 				// Filter the functions by class
-				if ( all || namespace_re.test( handleObj.namespace ) ) {
+				if ( all || typeObj.namespaceMatches( handleObj.namespace ) ) {
 					// Pass in a reference to the handler function itself
 					// So that we can later remove it
 					event.handler = handleObj.handler;
@@ -606,6 +590,30 @@ jQuery.Event.prototype = {
 	isDefaultPrevented: returnFalse,
 	isPropagationStopped: returnFalse,
 	isImmediatePropagationStopped: returnFalse
+};
+
+// splits a namespace from a type and returns the typeName, namespace array, and regex to test against namespaces
+var EventType = function(type)
+{
+    var namespaces;
+
+    // Namespaced event handlers
+    namespaces = type.split(".");
+    type = namespaces.shift();
+    namespaces = namespaces.slice(0);
+    namespace_regex = new RegExp("(^|\\.)" + jQuery.map( namespaces.slice(0).sort(), fcleanup ).join("\\.(?:.*\\.)?") + "(\\.|$)");
+
+    return {type: type,
+            namespaces: namespaces,
+            namespace: namespaces.sort().join("."),
+            hasNamespaces: function()
+            {
+                return this.namespace.length > 0;
+            },
+            namespaceMatches: function( namespace ){
+                return namespace_regex.test(namespace);
+            }
+           };
 };
 
 // Checks if an event happened on an element within another element
@@ -949,27 +957,23 @@ jQuery.each(["live", "die"], function( i, name ) {
 		types = (types || "").split(" ");
 
 		while ( (type = types[ i++ ]) != null ) {
-			match = rnamespaces.exec( type );
-			namespaces = "";
 
-			if ( match )  {
-				namespaces = match[0];
-				type = type.replace( rnamespaces, "" );
-			}
+			typeObj = EventType(type);
+                        type = typeObj.type;
 
 			if ( type === "hover" ) {
-				types.push( "mouseenter" + namespaces, "mouseleave" + namespaces );
+				types.push( "mouseenter" + typeObj.namespace, "mouseleave" + typeObj.namespace );
 				continue;
 			}
 
 			preType = type;
 
 			if ( type === "focus" || type === "blur" ) {
-				types.push( liveMap[ type ] + namespaces );
-				type = type + namespaces;
+				types.push( liveMap[ type ] + typeObj.namespace );
+				type += typeObj.namespace;
 
 			} else {
-				type = (liveMap[ type ] || type) + namespaces;
+				type = (liveMap[ type ] || type) + typeObj.namespace;
 			}
 
 			if ( name === "live" ) {
@@ -991,7 +995,7 @@ jQuery.each(["live", "die"], function( i, name ) {
 
 function liveHandler( event ) {
 	var stop, maxLevel, elems = [], selectors = [],
-		related, match, handleObj, elem, j, i, l, data, close, namespace,
+		related, match, handleObj, elem, j, i, l, data, close, typeObj,
 		events = jQuery.data( this, "events" );
 
 	// Make sure we avoid non-left-click bubbling in Firefox (#3861)
@@ -999,20 +1003,16 @@ function liveHandler( event ) {
 		return;
 	}
 
-	if ( event.namespace ) {
-		namespace = new RegExp("(^|\\.)" + event.namespace.split(".").join("\\.(?:.*\\.)?") + "(\\.|$)");
-	}
-
 	event.liveFired = this;
+        typeObj = EventType(event.type + (event.namespace ? "." + event.namespace : ""));
 
 	var live = events.live.slice(0);
 
 	for ( j = 0; j < live.length; j++ ) {
 		handleObj = live[j];
 
-		if ( handleObj.origType.replace( rnamespaces, "" ) === event.type ) {
+		if ( handleObj.origType === event.type ) {
 			selectors.push( handleObj.selector );
-
 		} else {
 			live.splice( j--, 1 );
 		}
@@ -1026,12 +1026,13 @@ function liveHandler( event ) {
 		for ( j = 0; j < live.length; j++ ) {
 			handleObj = live[j];
 
-			if ( close.selector === handleObj.selector && (!namespace || namespace.test( handleObj.namespace )) ) {
+			if ( close.selector === handleObj.selector && (!typeObj.hasNamespaces() || typeObj.namespaceMatches( handleObj.namespace )) ) {
 				elem = close.elem;
 				related = null;
 
 				// Those two events require additional checking
-				if ( handleObj.preType === "mouseenter" || handleObj.preType === "mouseleave" ) {
+				if ( handleObj.preType === "mouseenter" || handleObj.preType === "mouseleave" ||
+                                      handleObj.preType === "focus" || handleObj.preType === "blur") {
 					event.type = handleObj.preType;
 					related = jQuery( event.relatedTarget ).closest( handleObj.selector )[0];
 				}
